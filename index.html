@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Text Anonymisierer – Prompt Generator</title>
+<style>
+:root{--primary:#001D3B;--primary-light:#003366;--primary-lighter:#0a4a7a;--accent:#00B4D8;--accent-glow:rgba(0,180,216,0.15);--success:#2ecc71;--warn:#e67e22;--danger:#e74c3c;--bg:#f0f2f5;--surface:#fff;--surface-alt:#f7f8fa;--border:#dde1e7;--border-focus:var(--accent);--text:#1a1a2e;--text-muted:#5a6270;--text-light:#8a92a0;--radius:10px;--radius-sm:6px;--radius-lg:14px;--shadow-sm:0 1px 3px rgba(0,29,59,.06);--shadow-md:0 4px 16px rgba(0,29,59,.08);--shadow-lg:0 8px 32px rgba(0,29,59,.12);--font-body:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;--font-mono:'Cascadia Code','Fira Code',Consolas,monospace;--transition:.2s ease}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;text-align:center;padding:1.8rem 1rem 1.6rem;position:relative;overflow:hidden}
+header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 50%,rgba(0,180,216,.08),transparent 60%);pointer-events:none}
+header h1{font-size:clamp(1.3rem,3.5vw,1.75rem);font-weight:700;letter-spacing:-.02em;position:relative}
+header h1 span{color:var(--accent)}
+main{max-width:780px;margin:0 auto;padding:1.5rem 1rem 3rem}
+.section{background:var(--surface);border-radius:var(--radius-lg);padding:1.25rem 1.4rem;margin-bottom:1rem;box-shadow:var(--shadow-sm);border:1px solid var(--border);transition:box-shadow var(--transition)}
+.section:hover{box-shadow:var(--shadow-md)}
+label,.label-text{display:block;font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:.35rem;letter-spacing:.01em}
+.hint{font-size:.75rem;color:var(--text-muted);margin-top:.25rem;line-height:1.5}
+.controls-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:540px){.controls-row{grid-template-columns:1fr}}
+.select-wrap select{width:100%;padding:.55rem .75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.85rem;font-family:var(--font-body);background:var(--surface);color:var(--text);cursor:pointer;transition:border-color var(--transition),box-shadow var(--transition);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6270' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem}
+.select-wrap select:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
+.mode-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem}
+.segment-group{display:inline-flex;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface-alt)}
+.segment-btn{padding:.5rem 1rem;font-size:.82rem;font-family:var(--font-body);font-weight:500;border:none;background:transparent;color:var(--text-muted);cursor:pointer;transition:all var(--transition);white-space:nowrap}
+.segment-btn[aria-pressed="true"]{background:var(--primary);color:#fff;font-weight:600}
+.segment-btn:hover:not([aria-pressed="true"]){background:rgba(0,29,59,.06)}
+.info-btn{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:.72rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all var(--transition);flex-shrink:0}
+.info-btn:hover,.info-btn[aria-expanded="true"]{background:var(--accent);color:#fff}
+.tooltip-wrap{position:relative;display:inline-block}
+.tooltip-panel{display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:100;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:.9rem 1rem;font-size:.78rem;color:var(--text-muted);line-height:1.55;width:320px;max-width:90vw;box-shadow:var(--shadow-lg)}
+.tooltip-panel.open{display:block}
+.tooltip-panel strong{color:var(--text)}
+textarea{width:100%;padding:.65rem .8rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.84rem;font-family:var(--font-body);line-height:1.55;resize:vertical;transition:border-color var(--transition),box-shadow var(--transition);color:var(--text);background:var(--surface)}
+textarea:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
+textarea[readonly]{background:var(--surface-alt);cursor:default;color:var(--text-muted)}
+textarea::placeholder{color:var(--text-light)}
+.input-area{min-height:130px}.output-area{min-height:160px}
+.preview-area{min-height:90px;font-family:var(--font-mono);font-size:.78rem}
+.hidden{display:none!important}
+.checkbox-row{display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none}
+.checkbox-row input[type="checkbox"]{width:17px;height:17px;accent-color:var(--primary);cursor:pointer;flex-shrink:0}
+.checkbox-row .label-text{margin-bottom:0;cursor:pointer;font-size:.84rem}
+.reply-section{margin-top:.8rem}
+.btn-row{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem}
+.btn{padding:.6rem 1.2rem;border-radius:var(--radius-sm);font-size:.84rem;font-family:var(--font-body);font-weight:600;border:none;cursor:pointer;transition:all var(--transition);white-space:nowrap}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-lighter)}.btn-primary:active{transform:scale(.97)}
+.btn-secondary{background:transparent;color:var(--text-muted);border:1.5px solid var(--border)}.btn-secondary:hover{background:var(--surface-alt);border-color:var(--text-light)}
+.btn-sm{padding:.35rem .7rem;font-size:.76rem}
+.btn-danger{color:var(--danger);border-color:var(--danger);background:transparent}.btn-danger:hover{background:rgba(231,76,60,.06)}
+.copy-status{display:none;align-items:center;gap:.4rem;font-size:.8rem;font-weight:600;color:var(--success);animation:fadeInScale .3s ease}
+.copy-status.show{display:inline-flex}
+.copy-status .check-icon{width:18px;height:18px;border-radius:50%;background:var(--success);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.65rem}
+@keyframes fadeInScale{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.message-area{min-height:1.4em;font-size:.8rem;font-weight:500;margin-top:.4rem;transition:color var(--transition)}
+.message-area.warn{color:var(--warn)}.message-area.success{color:var(--success)}.message-area.error{color:var(--danger)}
+details{border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface-alt)}
+details>summary{padding:.7rem 1rem;font-size:.84rem;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;gap:.5rem;color:var(--text);user-select:none}
+details>summary::before{content:'▶';font-size:.65rem;transition:transform .2s;color:var(--text-muted)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary::-webkit-details-marker{display:none}
+.preview-content{padding:.8rem 1rem 1rem}
+.preview-label{font-size:.76rem;font-weight:600;color:var(--text-muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em}
+.history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.history-header h3{font-size:.92rem;font-weight:700}
+.history-empty{font-size:.8rem;color:var(--text-light);padding:.5rem 0}
+.history-item{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.7rem .85rem;margin-bottom:.5rem;background:var(--surface-alt);transition:box-shadow var(--transition)}
+.history-item:hover{box-shadow:var(--shadow-sm)}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem}
+.chip{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.68rem;font-weight:600;background:rgba(0,29,59,.06);color:var(--text-muted);white-space:nowrap}
+.chip-time{background:var(--accent-glow);color:var(--primary)}
+.history-actions{display:flex;flex-wrap:wrap;gap:.4rem}
+footer{text-align:center;padding:1.5rem 1rem;font-size:.75rem;color:var(--text-light)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:540px){.section{padding:1rem}.btn-row{flex-direction:column;align-items:stretch}.btn-row .copy-status{justify-content:center}}
+</style>
+</head>
+<body>
+<header><h1>Business Text <span>Anonymisierer</span></h1></header>
+<main>
+  <div class="section">
+    <div class="controls-row">
+      <div class="select-wrap">
+        <label for="selStyle">Ton / Stil</label>
+        <select id="selStyle">
+          <option value="professional">professionell und direkt (E-Mail extern &amp; intern)</option>
+          <option value="teams">sehr kurz und direkt (interne Teams-Nachricht)</option>
+        </select>
+      </div>
+      <div class="select-wrap">
+        <label for="selAnon">Anonymisierung-Stufe</label>
+        <select id="selAnon">
+          <option value="minimal">Minimal</option>
+          <option value="standard" selected>Standard</option>
+          <option value="streng">Streng</option>
+        </select>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:.6rem">Shortcut: <kbd style="background:#eee;padding:.1em .4em;border-radius:3px;font-size:.78em">Strg + Enter</kbd> erzeugt &amp; kopiert den Prompt.</p>
+  </div>
+  <div class="section">
+    <div class="mode-header">
+      <span class="label-text" style="margin-bottom:0">Input-Modus</span>
+      <div class="tooltip-wrap">
+        <button class="info-btn" id="infoBtn" aria-expanded="false" aria-label="Info" title="Info">I</button>
+        <div class="tooltip-panel" id="tooltipPanel" role="tooltip">
+          <p><strong>E-Mail (Original):</strong> Füge eine bestehende E-Mail ein. Der Generator anonymisiert sie und erstellt einen Prompt zum Umschreiben/Beantworten.</p>
+          <p style="margin-top:.4rem"><strong>Stichpunkte:</strong> Füge Stichpunkte ein. Der Generator erstellt daraus eine zusammenhängende Nachricht, ohne Fakten zu erfinden.</p>
+        </div>
+      </div>
+    </div>
+    <div class="segment-group" role="group" aria-label="Input-Modus wählen">
+      <button class="segment-btn" id="modeEmail" aria-pressed="true">E-Mail (Original)</button>
+      <button class="segment-btn" id="modeBullets" aria-pressed="false">Stichpunkte hinzufügen</button>
+    </div>
+    <div id="emailInputWrap" style="margin-top:.8rem">
+      <label for="inputEmail">E-Mail (Original)</label>
+      <textarea id="inputEmail" class="input-area" placeholder="Hier die E-Mail einfügen – kann echte Namen, Firmennamen, Nummern usw. enthalten…"></textarea>
+    </div>
+    <div id="bulletsInputWrap" class="hidden" style="margin-top:.8rem">
+      <label for="inputBullets">Stichpunkte (Input)</label>
+      <textarea id="inputBullets" class="input-area" placeholder="- Thema: z.B. Rechnungskorrektur&#10;- Betrag: z.B. 1.250 €&#10;- Aktion: z.B. bitte korrigieren und neu senden"></textarea>
+      <p class="hint">Die Stichpunkte werden in eine vollständige Nachricht umgewandelt – ohne Fakten zu erfinden.</p>
+    </div>
+  </div>
+  <div class="section">
+    <label class="checkbox-row"><input type="checkbox" id="chkReply"><span class="label-text">Auf E-Mail antworten</span></label>
+    <div id="replySection" class="reply-section hidden">
+      <label for="inputContext">E-Mail, auf die du antworten möchtest</label>
+      <textarea id="inputContext" class="input-area" placeholder="Hier die E-Mail einfügen, auf die geantwortet werden soll…"></textarea>
+      <p class="hint">Wird nur als Kontext für den Prompt genutzt und ebenfalls anonymisiert.</p>
+    </div>
+  </div>
+  <div class="section">
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnGenerate">Prompt generieren &amp; kopieren</button>
+      <span class="copy-status" id="copyStatus" aria-live="polite"><span class="check-icon">✓</span> Prompt erfolgreich kopiert</span>
+      <button class="btn btn-secondary" id="btnReset">Prompt zurücksetzen</button>
+    </div>
+    <div class="message-area" id="messageArea" aria-live="polite"></div>
+  </div>
+  <div class="section">
+    <label for="outputPrompt">Fertiger Prompt</label>
+    <textarea id="outputPrompt" class="output-area" readonly placeholder="Hier erscheint der fertige Prompt für ChatGPT…"></textarea>
+  </div>
+  <div class="section" style="padding:0;border:none;box-shadow:none;background:transparent">
+    <details id="previewDetails">
+      <summary>Anonymisierung-Vorschau (aufklappen)</summary>
+      <div class="preview-content">
+        <div id="previewMainWrap">
+          <p class="preview-label" id="previewMainLabel">Anonymisierte Vorschau – Original</p>
+          <textarea class="preview-area" id="previewMain" readonly></textarea>
+        </div>
+        <div id="previewCtxWrap" class="hidden" style="margin-top:.8rem">
+          <p class="preview-label">Anonymisierte Vorschau – Kontext</p>
+          <textarea class="preview-area" id="previewCtx" readonly></textarea>
+        </div>
+      </div>
+    </details>
+  </div>
+  <div class="section">
+    <div class="history-header">
+      <h3>Verlauf (letzte 5 Prompts)</h3>
+      <button class="btn btn-sm btn-secondary" id="btnClearHistory">Verlauf leeren</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+</main>
+<footer>© 2026 Business Text Anonymisierer</footer>
+<script>
+(function(){
+'use strict';
+
+/* ========== DOM REFS ========== */
+const $=id=>document.getElementById(id);
+const selStyle=$('selStyle'),selAnon=$('selAnon');
+const modeEmail=$('modeEmail'),modeBullets=$('modeBullets');
+const emailWrap=$('emailInputWrap'),bulletsWrap=$('bulletsInputWrap');
+const inputEmail=$('inputEmail'),inputBullets=$('inputBullets');
+const chkReply=$('chkReply'),replySection=$('replySection'),inputContext=$('inputContext');
+const btnGenerate=$('btnGenerate'),btnReset=$('btnReset'),btnClearHist=$('btnClearHistory');
+const outputPrompt=$('outputPrompt');
+const previewMain=$('previewMain'),previewCtx=$('previewCtx');
+const previewMainLabel=$('previewMainLabel'),previewCtxWrap=$('previewCtxWrap');
+const copyStatus=$('copyStatus'),messageArea=$('messageArea');
+const infoBtn=$('infoBtn'),tooltipPanel=$('tooltipPanel');
+const historyList=$('historyList');
+
+let currentMode='email',history=[],previewTimer=null,saveTimer=null,copyTimer=null;
+const LS_PREFIX='bta_';
+const LS_KEYS=['style','anon','reply','mode','emailText','bulletsText','contextText','output','history'];
+
+/* ========== GERMAN COMMON WORDS (false-positive filter) ========== */
+const GCW = new Set([
+'montag','dienstag','mittwoch','donnerstag','freitag','samstag','sonntag',
+'januar','februar','märz','april','mai','juni','juli','august','september','oktober','november','dezember',
+'frühling','sommer','herbst','winter',
+'anfang','ende','mitte','morgen','abend','mittag','nacht','vormittag','nachmittag',
+'heute','gestern','vorgestern','übermorgen',
+'montags','dienstags','mittwochs','donnerstags','freitags','samstags','sonntags',
+'angebot','angebote','angebots','auftrag','aufträge','auftrags',
+'rechnung','rechnungen','rechnungs',
+'vertrag','verträge','vertrags','vertragsnummer',
+'projekt','projekte','projekts','projektnummer',
+'termin','termine','termins',
+'besprechung','besprechungen','meeting','meetings',
+'budget','budgets','kosten','preis','preise','preisen',
+'zahlung','zahlungen','zahlen','betrag','beträge','betrags',
+'konto','konten','kontos',
+'kunde','kunden','kundin','kundinnen',
+'lieferant','lieferanten','lieferantin',
+'partner','partners','partnerin',
+'mitarbeiter','mitarbeitern','mitarbeiterin','mitarbeiterinnen',
+'kollege','kollegen','kollegin','kolleginnen',
+'chef','chefin','vorgesetzter','vorgesetzte',
+'team','teams','abteilung','abteilungen',
+'firma','firmen','unternehmen','unternehmens',
+'geschäft','geschäfte','geschäfts',
+'markt','märkte','markts',
+'umsatz','umsätze','umsatzes',
+'gewinn','gewinne','gewinns','verlust','verluste',
+'leistung','leistungen',
+'qualität','service','services',
+'produkt','produkte','produkts','produkten',
+'lösung','lösungen','system','systeme','systems',
+'software','hardware','internet','website','webseite',
+'telefon','telefonnummer','handy','handynummer',
+'adresse','adressen',
+'straße','straßen','weg','wege','platz','plätze',
+'stadt','städte','land','länder','staat','staaten',
+'bitte','danke','grüße','gruß','dank',
+'grund','gründe','basis','grundlage',
+'frage','fragen','antwort','antworten',
+'thema','themen','punkt','punkte','sache','sachen',
+'information','informationen','info','infos',
+'dokument','dokumente','datei','dateien',
+'liste','listen','tabelle','tabellen',
+'mail','mails','nachricht','nachrichten','brief','briefe',
+'text','texte','inhalt','inhalte','beispiel','beispiele',
+'zeit','zeiten','tag','tage','tagen','woche','wochen','monat','monate','monaten','jahr','jahre','jahren',
+'stunde','stunden','minute','minuten','nummer','nummern',
+'teil','teile','teilen','hälfte',
+'art','arten','typ','typen','form','formen',
+'seite','seiten','bereich','bereiche','bereichen',
+'ergebnis','ergebnisse','ergebnissen',
+'änderung','änderungen','korrektur','korrekturen',
+'freigabe','freigaben','genehmigung','genehmigungen',
+'rückmeldung','rückmeldungen','feedback','feedbacks',
+'abstimmung','abstimmungen','vorgang','vorgänge','vorgangs',
+'status','stand','fortschritt',
+'problem','probleme','problemen','fehler','fehlern',
+'ursache','ursachen','hinweis','hinweise','hinweisen',
+'klärung','prüfung','prüfungen',
+'bestätigung','bestätigungen',
+'unterlagen','unterlage','anlage','anlagen',
+'kopie','kopien','entwurf','entwürfe',
+'version','versionen','überblick','zusammenfassung',
+'planung','planungen','plan','pläne',
+'umsetzung','implementierung',
+'einführung','schulung','schulungen',
+'wartung','support',
+'lieferung','lieferungen','versand',
+'bestellung','bestellungen','stornierung','stornierungen',
+'mahnung','mahnungen','gutschrift','gutschriften',
+'erstattung','erstattungen','rabatt','rabatte','skonto',
+'provision','provisionen','laufzeit','laufzeiten',
+'frist','fristen','deadline','deadlines',
+'ziel','ziele','zielen','strategie','strategien',
+'konzept','konzepte','konzepts','prozess','prozesse','prozessen',
+'schritt','schritte','schritten',
+'blick','bezug','hinblick','rücksicht',
+'absprache','rücksprache','einverständnis',
+'interesse','erfolg','misserfolg',
+'verständnis','einigung','übereinkunft',
+'vorbehalt','vorbehalte','ausnahme','ausnahmen',
+'ergänzung','ergänzungen','anpassung','anpassungen',
+'bedingung','bedingungen','voraussetzung','voraussetzungen',
+'hintergrund','kontext','zusammenhang',
+'alle','alles','allen','allem',
+'andere','anderer','anderes','anderen','anderem',
+'beide','beiden','beides',
+'diese','dieser','dieses','diesem','diesen',
+'einige','einiger','einiges','einigen','einigem',
+'erste','erster','erstes','ersten','erstem',
+'jede','jeder','jedes','jedem','jeden',
+'letzte','letzter','letztes','letzten','letztem',
+'manche','mancher','manches','manchen','manchem',
+'nächste','nächster','nächstes','nächsten','nächstem',
+'neue','neuer','neues','neuen','neuem',
+'viele','vieler','vieles','vielen','vielem',
+'weitere','weiterer','weiteres','weiteren','weiterem',
+'wenige','weniger','weniges','wenigen','wenigem',
+'anbei','hiermit','bezüglich','betreff','betreffend',
+'herr','frau','herrn','damen','herren',
+'sehr','liebe','lieber','liebes','lieben','liebem',
+'guten','guter','gute','gutem',
+'anliegend','beiliegend',
+'vorab','zunächst','zuerst','abschließend','insgesamt',
+'aktuell','aktueller','aktuelle','aktuellen',
+'intern','interne','internen','interner','externes',
+'extern','externe','externen','externer',
+'gesamt','gesamte','gesamten','gesamter',
+'offen','offene','offenen','offener',
+'dringend','dringende','dringenden','dringender',
+'wichtig','wichtige','wichtigen','wichtiger',
+'möglich','mögliche','möglichen','möglicher',
+'geplant','geplante','geplanten','geplanter',
+'vereinbart','vereinbarte','vereinbarten',
+'zusätzlich','zusätzliche','zusätzlichen',
+'jeweilig','jeweilige','jeweiligen',
+'entsprechend','entsprechende','entsprechenden'
+]);
+
+function isCommonGermanWord(w){return GCW.has(w.toLowerCase())}
+
+/* ========== ANONYMIZATION ENGINE v3 ========== */
+function createAnonymizer(level){
+const maps={},counts={};
+function ph(cat,val){
+  if(!maps[cat]){maps[cat]={};counts[cat]=0}
+  const n=val.trim().replace(/\s+/g,' ').toLowerCase();
+  if(maps[cat][n]!==undefined)return maps[cat][n];
+  counts[cat]++;
+  return(maps[cat][n]='\x01'+cat+'_'+counts[cat]+'\x02');
+}
+function sr(t,rx,fn){return t.replace(new RegExp(rx.source,rx.flags),fn)}
+
+function anonymize(text){
+if(!text||!text.trim())return '';
+let t=text;
+
+/* Phase 0: Protect dates */
+const dh=[];
+function hd(m){dh.push(m);return '\x03D'+(dh.length-1)+'\x03'}
+t=sr(t,/\b(?:Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)\s+\d{4}\b/gi,hd);
+t=sr(t,/\b(?:Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)\.?\s+\d{4}\b/gi,hd);
+t=sr(t,/\b\d{1,2}[\.\/-]\d{1,2}[\.\/-]\d{2,4}\b/g,hd);
+t=sr(t,/\b(?:19|20)\d{2}\b/g,hd);
+t=sr(t,/\bQ[1-4][\s\/]\d{4}\b/gi,hd);
+
+/* Phase 1: High-specificity (all levels) */
+t=sr(t,/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,m=>ph('EMAIL',m));
+t=sr(t,/\b[A-Z]{2}\d{2}\s?(?:\d{4}\s?){2,7}\d{1,4}\b/g,m=>ph('IBAN',m));
+t=sr(t,/(?:BIC|SWIFT)[\s:#\-]*[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?/gi,m=>ph('BIC',m));
+t=sr(t,/\d[\d.,]*\s*(?:Mio\.?|Mrd\.?|Tsd\.?)?\s*(?:EUR|Euro|€)/gi,m=>ph('BETRAG',m));
+t=sr(t,/(?:EUR|€)\s*\d[\d.,]*\s*(?:Mio\.?|Mrd\.?|Tsd\.?)?/gi,m=>ph('BETRAG',m));
+t=sr(t,/(?:Kundennummer|Kunden-Nr\.?|Kd[\.\-]?Nr\.?|Kundennr\.?)[\s:#\-]*[A-Za-z0-9\-_]+/gi,m=>ph('KUNDENNUMMER',m));
+t=sr(t,/(?:Projektnummer|Projekt[\.\-]?Nr\.?|Projektnr\.?)[\s:#\-]*[A-Za-z0-9\-_]+/gi,m=>ph('PROJEKTNUMMER',m));
+t=sr(t,/(?:Bankverbindung|Kontodaten|Kontonummer|Konto[\.\-]?Nr\.?)[\s:#\-]*[A-Za-z0-9\s\-]{4,25}/gi,m=>ph('KONTODATEN',m));
+t=sr(t,/(?:Ticket|Case|Vorgang|Vorgangsnummer|Aktenzeichen|Az\.?)[\s:#\-]*[A-Za-z0-9\-_]{2,}/gi,m=>ph('ID',m));
+t=sr(t,/(?:ID|Nummer|Nr\.?|Referenz|Ref\.?)[\s:#\-]+[A-Za-z0-9\-_]{3,}/gi,m=>ph('ID',m));
+t=sr(t,/(?:Tel\.?|Telefon|Fon|Phone|Mobil|Handy|Fax)[\s:.]*(?:\+?\d[\d\s\-\/()\.]){7,}/gi,m=>ph('TELEFON',m));
+t=sr(t,/\+\d{1,3}[\s\-]?\(?\d{2,5}\)?[\s\-]?\d{2,}[\s\-]?\d{2,}(?:[\s\-]?\d{2,})?/g,m=>{
+  if(m.replace(/\D/g,'').length<7)return m;return ph('TELEFON',m);
+});
+t=sr(t,/\b0\d{2,4}[\s\-\/]\d{3,}[\s\-]?\d{0,}(?:[\s\-]?\d{2,})?\b/g,m=>{
+  const d=m.replace(/\D/g,'').length;if(d<7||d>15)return m;return ph('TELEFON',m);
+});
+
+/* Phase 2: Standard + Streng */
+if(level==='standard'||level==='streng'){
+t=sr(t,/https?:\/\/[^\s<>"{}|\\^`\[\]]+/gi,m=>ph('URL',m));
+t=sr(t,/\bwww\.[^\s<>"{}|\\^`\[\]]+/gi,m=>ph('URL',m));
+t=sr(t,/(?:[A-ZÄÖÜ][a-zäöüß]*(?:str(?:aße|\.)?|weg|gasse|allee|platz|ring|damm|ufer|steig|pfad))\s+\d+\s?[a-zA-Z]?\b/gi,m=>ph('ADRESSE',m));
+t=sr(t,/\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+(?:\s+(?:am\s+)?[A-ZÄÖÜ][a-zäöüß]+)?\b/g,m=>{
+  if(m.includes('\x03'))return m;return ph('PLZ_ORT',m);
+});
+
+/* Companies */
+t=sr(t,/(?:[A-ZÄÖÜ][\wäöüß]*(?:[\s&\-]+[A-ZÄÖÜa-zäöüß][\wäöüß]*){0,4})\s+(?:GmbH|UG|AG|KG|OHG|SE|mbH|e\.?\s?V\.?|Co\.?\s?KG|Inc\.?|Ltd\.?|Corp\.?|S\.?A\.?|GbR|KGaA|gGmbH|& Co\.?(?:\s?KG)?)\b/g,m=>{
+  if(m.includes('\x01'))return m;return ph('FIRMA',m);
+});
+t=sr(t,/(?:Firma|Unternehmen|Auftraggeber|Lieferant|Dienstleister|Anbieter|Hersteller)[\s:]+([A-ZÄÖÜ][\wäöüß&\.\-]*(?:\s+[A-ZÄÖÜ][\wäöüß&\.\-]*){0,3})/gi,(m,name)=>{
+  if(m.includes('\x01'))return m;return m.slice(0,m.lastIndexOf(name))+ph('FIRMA',name);
+});
+
+/* Person names */
+t=sr(t,/Sehr\s+geehrte[r]?\s+(?:Herr|Frau)\s+(?:(?:Dr|Prof|Ing|Dipl)\.?\s+)?([A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)/gi,(m,n)=>m.slice(0,m.lastIndexOf(n))+ph('PERSON',n));
+t=sr(t,/(?:Hallo|Hi|Hey|Moin|Servus|Guten\s+(?:Tag|Morgen|Abend)|Liebe[r]?)\s+(?:(?:Herr|Frau|Herrn)\s+(?:(?:Dr|Prof)\.?\s+)?)?([A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?(?:\s+[A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)?)/gi,(m,n)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(n.split(/\s/)[0]))return m;return m.slice(0,m.lastIndexOf(n))+ph('PERSON',n);
+});
+t=sr(t,/(?:Herr(?:n)?|Frau)\s+(?:(?:Dr|Prof|Ing|Dipl)\.?\s+)?([A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)/gi,(m,n)=>{
+  if(m.includes('\x01'))return m;return m.slice(0,m.lastIndexOf(n))+ph('PERSON',n);
+});
+t=sr(t,/(?:Mit\s+(?:freundlich(?:en|em)\s+)?Gr(?:ü|ue)(?:ß|ss)(?:en)?|(?:Viele\s+)?Gr(?:ü|ue)(?:ß|ss)e?|Beste\s+Gr(?:ü|ue)(?:ß|ss)e?|Herzliche\s+Gr(?:ü|ue)(?:ß|ss)e?|VG|LG|MfG|BG|Cheers|Best|Regards)\s*[,\n\r]\s*([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)?)/gi,(m,n)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(n.split(/\s/)[0]))return m;return m.slice(0,m.lastIndexOf(n))+ph('PERSON',n);
+});
+t=sr(t,/(?:Gesendet\s+von|Absender|Von|From|Ansprechpartner(?:in)?|Bearbeiter(?:in)?|Sachbearbeiter(?:in)?)[\s:]+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?)/gi,(m,n)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(n.split(/\s/)[0]))return m;return m.slice(0,m.lastIndexOf(n))+ph('PERSON',n);
+});
+
+/* Context-based entity detection */
+const PP=['mit','von','bei','an','für','durch','über','laut','gemäß','wegen','gegen','ohne','nach','auf','zwischen','neben','unter','vor','hinter','aus'];
+const pj=PP.join('|');
+// prep + 3 entities list
+t=t.replace(new RegExp('\\b('+pj+')\\s+([A-ZÄÖÜ][a-zäöüß]+),\\s+([A-ZÄÖÜ][a-zäöüß]+)\\s+und\\s+([A-ZÄÖÜ][a-zäöüß]+)\\b','g'),(m,p,a,b,c)=>{
+  if(m.includes('\x01'))return m;
+  const ea=isCommonGermanWord(a)?a:ph('PERSON',a);
+  const eb=isCommonGermanWord(b)?b:ph('PERSON',b);
+  const ec=isCommonGermanWord(c)?c:ph('PERSON',c);
+  return p+' '+ea+', '+eb+' und '+ec;
+});
+// prep + 2 entities
+t=t.replace(new RegExp('\\b('+pj+')\\s+([A-ZÄÖÜ][a-zäöüß]+)\\s+und\\s+([A-ZÄÖÜ][a-zäöüß]+)\\b','g'),(m,p,a,b)=>{
+  if(m.includes('\x01'))return m;
+  return p+' '+(isCommonGermanWord(a)?a:ph('PERSON',a))+' und '+(isCommonGermanWord(b)?b:ph('PERSON',b));
+});
+// prep + 2 cap words (multi-word entity)
+t=t.replace(new RegExp('\\b('+pj+')\\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\\-][A-ZÄÖÜ][a-zäöüß]+)?)\\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\\-][A-ZÄÖÜ][a-zäöüß]+)?)\\b','g'),(m,p,a,b)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(a)&&isCommonGermanWord(b))return m;
+  if(a.includes('\x03')||b.includes('\x03'))return m;
+  if(!isCommonGermanWord(a)&&!isCommonGermanWord(b))return p+' '+ph('PERSON',a)+' '+ph('PERSON',b);
+  if(!isCommonGermanWord(a))return p+' '+ph('PERSON',a)+' '+b;
+  return m;
+});
+// prep + single cap word
+t=t.replace(new RegExp('\\b('+pj+')\\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\\-][A-ZÄÖÜ][a-zäöüß]+)?)\\b','g'),(m,p,w)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(w))return m;if(w.includes('\x03'))return m;
+  return p+' '+ph('PERSON',w);
+});
+// two cap words = full name
+t=sr(t,/\b([A-ZÄÖÜ][a-zäöüß]+)\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)\b/g,(m,a,b)=>{
+  if(m.includes('\x01')||m.includes('\x02')||m.includes('\x03'))return m;
+  if(isCommonGermanWord(a)||isCommonGermanWord(b))return m;
+  return ph('PERSON',a)+' '+ph('PERSON',b);
+});
+// cap word + verb
+const VL='wartet|meldet|ist|hat|hatte|wird|wurde|sagt|sagte|meint|meinte|schickt|schickte|schreibt|schrieb|ruft|braucht|bittet|bestätigt|reagiert|antwortet|antwortete|kommt|geht|steht|bleibt|fehlt|liegt|sitzt|plant|prüft|klärt|informiert|berichtet|erwartet|sendet|überweist|zahlt|überprüft|übernimmt|kümmert|arbeitet|wünscht|möchte|kann|muss|soll|darf|will|sei|wäre|könnte|sollte|müsste|würde|fragt|fragte|bat|wollte|sprach|teilte|schlug|rief|gab|nahm|fand|hält|hielt|blieb|ging|kam|lief|schien|wusste|weiß|kennt|kannte|findet|denkt|glaubt|hofft|versucht|erklärt|bestellt|storniert|rechnet|bucht|lehnt|stimmt|passt|fehlt';
+t=t.replace(new RegExp('\\b([A-ZÄÖÜ][a-zäöüß]+(?:[\\-][A-ZÄÖÜ][a-zäöüß]+)?)\\s+(?='+VL+')\\b','g'),(m,w)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(w))return m;return ph('PERSON',w)+' ';
+});
+// list: A, B und C
+t=sr(t,/\b([A-ZÄÖÜ][a-zäöüß]+),\s+([A-ZÄÖÜ][a-zäöüß]+)\s+(?:und|oder)\s+([A-ZÄÖÜ][a-zäöüß]+)\b/g,(m,a,b,c)=>{
+  if(m.includes('\x01'))return m;
+  return(isCommonGermanWord(a)?a:ph('PERSON',a))+', '+(isCommonGermanWord(b)?b:ph('PERSON',b))+' und '+(isCommonGermanWord(c)?c:ph('PERSON',c));
+});
+// business context company
+t=sr(t,/(?:Projektvolumen|Auftragsvolumen|Umsatz|Angebot|Auftrag)\s+([A-ZÄÖÜ][a-zäöüß]+)(?=[\s:,])/gi,(m,w)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(w))return m;return m.slice(0,m.lastIndexOf(w))+ph('FIRMA',w);
+});
+// A und B
+t=sr(t,/\b([A-ZÄÖÜ][a-zäöüß]+)\s+und\s+([A-ZÄÖÜ][a-zäöüß]+)\b/g,(m,a,b)=>{
+  if(m.includes('\x01')||m.includes('\x02'))return m;
+  if(isCommonGermanWord(a)&&isCommonGermanWord(b))return m;
+  if(!isCommonGermanWord(a)&&!isCommonGermanWord(b))return ph('PERSON',a)+' und '+ph('PERSON',b);
+  return m;
+});
+// last resort verb match
+t=sr(t,/\b([A-ZÄÖÜ][a-zäöüß]+)\s+(wartet|meldet|schreibt|ruft|sagt|ist|hat|wird|wurde)\b/g,(m,w,v)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(w))return m;return ph('PERSON',w)+' '+v;
+});
+// verb + name
+t=t.replace(/\b(?:habe|hab|schreibe|rufe|kontaktiere|informiere|frage|erreiche|bitte|kenne|treffe|sehe|besuche|unterstütze|beauftrage|benachrichtige|erinnere)\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)\b/gi,(m,w)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(w))return m;return m.slice(0,m.lastIndexOf(w))+ph('PERSON',w);
+});
+// conjunction + name
+t=sr(t,/\b(?:dass|ob|weil|wenn|da|als|bevor|nachdem|sobald|obwohl|damit|bis|während|solange)\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)\b/g,(m,w)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(w))return m;return m.slice(0,m.lastIndexOf(w))+ph('PERSON',w);
+});
+// warte auf + name
+t=sr(t,/\b(?:warte|warten|wartet)\s+auf\s+([A-ZÄÖÜ][a-zäöüß]+(?:[\-][A-ZÄÖÜ][a-zäöüß]+)?)\b/g,(m,w)=>{
+  if(m.includes('\x01'))return m;if(isCommonGermanWord(w))return m;return m.slice(0,m.lastIndexOf(w))+ph('PERSON',w);
+});
+} /* end standard+streng */
+
+/* Phase 3: Streng */
+if(level==='streng'){
+t=sr(t,/\b[\w\-\.]+\.(?:pdf|docx?|xlsx?|pptx?|png|jpe?g|gif|bmp|svg|zip|rar|7z|tar|gz|csv|txt|xml|json|eml|msg)\b/gi,m=>{if(m.includes('\x01'))return m;return ph('DATEI',m)});
+t=sr(t,/\b[A-Z]{2,6}[\-_]\d{2,}(?:[\-_]\d+)*\b/g,m=>{if(m.includes('\x01'))return m;return ph('REFERENZ',m)});
+}
+
+/* Phase 4: Numbers */
+if(level==='standard'||level==='streng'){
+const md=level==='streng'?3:4;
+t=t.replace(new RegExp('\\b\\d{'+md+',}\\b','g'),m=>{if(m.includes('\x03'))return m;return ph('ZAHL',m)});
+}
+
+/* Phase 5: Finalize */
+t=t.replace(/\x03D(\d+)\x03/g,(_,i)=>dh[parseInt(i)]);
+t=t.replace(/\x01([^\x02]+)\x02/g,'[[$1]]');
+return t;
+}
+return{anonymize};
+}
+
+/* ========== PROMPT BUILDER ========== */
+function buildPrompt(anonMain,anonCtx,opts){
+const{style,mode,hasContext}=opts;
+const styleLine=style==='teams'
+  ?'Schreibe sehr kurz und direkt, wie eine interne Teams-Nachricht.'
+  :'Schreibe professionell und direkt, wie eine geschäftliche E-Mail.';
+const modeLine=mode==='email'
+  ?(hasContext?'Schreibe eine Antwort auf die folgende E-Mail. Nutze den Kontext der vorherigen E-Mail.':'Schreibe die folgende E-Mail um, behalte alle Fakten bei und erfinde nichts dazu.')
+  :(hasContext?'Verfasse eine Nachricht basierend auf den folgenden Stichpunkten als Antwort auf die vorherige E-Mail. Erfinde keine Fakten.':'Verfasse eine zusammenhängende Nachricht basierend auf den folgenden Stichpunkten. Erfinde keine Fakten, verwende nur die angegebenen Informationen.');
+
+let p='ANWEISUNG:\n'+styleLine+'\n'+modeLine+'\nBehalte die [[PLATZHALTER]] exakt bei – nicht auflösen oder ersetzen.\n\n';
+if(hasContext) p+='--- KONTEXT (vorherige E-Mail) ---\n'+anonCtx+'\n\n';
+p+='--- '+(mode==='email'?'ORIGINAL E-MAIL':'STICHPUNKTE')+' ---\n'+anonMain;
+return p;
+}
+
+/* ========== UI HELPERS ========== */
+function showMessage(msg,type){messageArea.textContent=msg;messageArea.className='message-area'+(type?' '+type:'')}
+function clearMessage(){messageArea.textContent='';messageArea.className='message-area'}
+function showCopyStatus(){copyStatus.classList.add('show');clearTimeout(copyTimer);copyTimer=setTimeout(()=>copyStatus.classList.remove('show'),2500)}
+function hideCopyStatus(){copyStatus.classList.remove('show')}
+function formatTimestamp(){const d=new Date();return d.toLocaleDateString('de-DE')+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}
+
+function debouncedPreview(){clearTimeout(previewTimer);previewTimer=setTimeout(updatePreview,300)}
+function updatePreview(){
+const mainText=currentMode==='email'?inputEmail.value:inputBullets.value;
+if(!mainText.trim()){previewMain.value='';previewCtx.value='';return}
+const anon=createAnonymizer(selAnon.value);
+previewMain.value=anon.anonymize(mainText);
+previewMainLabel.textContent=currentMode==='email'?'Anonymisierte Vorschau – Original':'Anonymisierte Vorschau – Stichpunkte';
+if(chkReply.checked&&inputContext.value.trim()){
+  previewCtx.value=anon.anonymize(inputContext.value);
+  previewCtxWrap.classList.remove('hidden');
+}else{previewCtx.value='';previewCtxWrap.classList.add('hidden')}
+}
+
+/* ========== GENERATE ========== */
+async function generateAndCopy(){
+const mainText=currentMode==='email'?inputEmail.value:inputBullets.value;
+if(!mainText.trim()){showMessage(currentMode==='bullets'?'Bitte zuerst Stichpunkte einfügen.':'Bitte zuerst eine E-Mail einfügen.','warn');updatePreview();return}
+const anon=createAnonymizer(selAnon.value);
+const anonMain=anon.anonymize(mainText);
+const hasCtx=chkReply.checked&&inputContext.value.trim();
+const anonCtx=hasCtx?anon.anonymize(inputContext.value):'';
+previewMain.value=anonMain;
+previewMainLabel.textContent=currentMode==='email'?'Anonymisierte Vorschau – Original':'Anonymisierte Vorschau – Stichpunkte';
+if(hasCtx){previewCtx.value=anonCtx;previewCtxWrap.classList.remove('hidden')}
+else{previewCtx.value='';previewCtxWrap.classList.add('hidden')}
+const prompt=buildPrompt(anonMain,anonCtx,{style:selStyle.value,mode:currentMode,hasContext:hasCtx});
+outputPrompt.value=prompt;
+try{await navigator.clipboard.writeText(prompt);showCopyStatus();showMessage('','success')}
+catch(e){showMessage('Kopieren fehlgeschlagen – bitte Browser-Berechtigung prüfen.','warn')}
+addHistory({timestamp:formatTimestamp(),style:selStyle.value,anon:selAnon.value,hasContext:hasCtx,mode:currentMode,prompt});
+saveState();
+}
+
+/* ========== HISTORY ========== */
+function addHistory(entry){history.unshift(entry);if(history.length>5)history=history.slice(0,5);renderHistory()}
+function renderHistory(){
+if(!history.length){historyList.innerHTML='<p class="history-empty">Noch kein Verlauf vorhanden.</p>';return}
+historyList.innerHTML=history.map((h,i)=>{
+const sn=h.style==='teams'?'Teams':'Professional';
+const an=h.anon.charAt(0).toUpperCase()+h.anon.slice(1);
+const mn=h.mode==='email'?'E-Mail':'Stichpunkte';
+return`<div class="history-item"><div class="chips"><span class="chip chip-time">${h.timestamp}</span><span class="chip">Stil: ${sn}</span><span class="chip">Anon: ${an}</span><span class="chip">Kontext: ${h.hasContext?'ja':'nein'}</span><span class="chip">Modus: ${mn}</span></div><div class="history-actions"><button class="btn btn-sm btn-secondary" data-action="restore" data-idx="${i}">Wiederherstellen</button><button class="btn btn-sm btn-secondary" data-action="copy" data-idx="${i}">Kopieren</button><button class="btn btn-sm btn-danger" data-action="delete" data-idx="${i}">Löschen</button></div></div>`;
+}).join('');
+}
+historyList.addEventListener('click',async e=>{
+const btn=e.target.closest('[data-action]');if(!btn)return;
+const idx=+btn.dataset.idx,act=btn.dataset.action;
+if(act==='restore'){outputPrompt.value=history[idx].prompt;showMessage('Prompt wiederhergestellt.','success')}
+else if(act==='copy'){try{await navigator.clipboard.writeText(history[idx].prompt);showCopyStatus()}catch(e){showMessage('Kopieren fehlgeschlagen.','warn')}}
+else if(act==='delete'){history.splice(idx,1);renderHistory();saveState()}
+});
+btnClearHist.addEventListener('click',()=>{history=[];renderHistory();saveState()});
+
+/* ========== MODE TOGGLE ========== */
+function setMode(mode){
+currentMode=mode;
+modeEmail.setAttribute('aria-pressed',mode==='email'?'true':'false');
+modeBullets.setAttribute('aria-pressed',mode==='bullets'?'true':'false');
+emailWrap.classList.toggle('hidden',mode!=='email');
+bulletsWrap.classList.toggle('hidden',mode!=='bullets');
+debouncedPreview();debouncedSave();
+}
+modeEmail.addEventListener('click',()=>setMode('email'));
+modeBullets.addEventListener('click',()=>setMode('bullets'));
+
+/* ========== REPLY TOGGLE ========== */
+chkReply.addEventListener('change',()=>{
+replySection.classList.toggle('hidden',!chkReply.checked);
+previewCtxWrap.classList.toggle('hidden',!chkReply.checked);
+debouncedPreview();debouncedSave();
+});
+
+/* ========== TOOLTIP ========== */
+function openTT(){tooltipPanel.classList.add('open');infoBtn.setAttribute('aria-expanded','true')}
+function closeTT(){tooltipPanel.classList.remove('open');infoBtn.setAttribute('aria-expanded','false')}
+infoBtn.addEventListener('click',e=>{e.stopPropagation();tooltipPanel.classList.contains('open')?closeTT():openTT()});
+tooltipPanel.addEventListener('click',e=>e.stopPropagation());
+document.addEventListener('click',()=>closeTT());
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTT()});
+
+/* ========== BUTTONS ========== */
+btnGenerate.addEventListener('click',generateAndCopy);
+btnReset.addEventListener('click',()=>{
+selStyle.value='professional';selAnon.value='standard';setMode('email');
+inputEmail.value='';inputBullets.value='';inputContext.value='';
+chkReply.checked=false;replySection.classList.add('hidden');
+outputPrompt.value='';previewMain.value='';previewCtx.value='';
+previewCtxWrap.classList.add('hidden');clearMessage();hideCopyStatus();closeTT();
+history=[];renderHistory();LS_KEYS.forEach(k=>localStorage.removeItem(LS_PREFIX+k));
+});
+
+/* ========== KEYBOARD SHORTCUT ========== */
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();generateAndCopy()}});
+
+/* ========== PERSISTENCE ========== */
+function saveState(){
+try{
+localStorage.setItem(LS_PREFIX+'style',selStyle.value);
+localStorage.setItem(LS_PREFIX+'anon',selAnon.value);
+localStorage.setItem(LS_PREFIX+'reply',chkReply.checked?'1':'0');
+localStorage.setItem(LS_PREFIX+'mode',currentMode);
+localStorage.setItem(LS_PREFIX+'emailText',inputEmail.value);
+localStorage.setItem(LS_PREFIX+'bulletsText',inputBullets.value);
+localStorage.setItem(LS_PREFIX+'contextText',inputContext.value);
+localStorage.setItem(LS_PREFIX+'output',outputPrompt.value);
+localStorage.setItem(LS_PREFIX+'history',JSON.stringify(history));
+}catch(e){}
+}
+function debouncedSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveState,400)}
+function restoreState(){
+try{
+const s=k=>localStorage.getItem(LS_PREFIX+k);
+if(s('style'))selStyle.value=s('style');
+if(s('anon'))selAnon.value=s('anon');
+if(s('reply')==='1'){chkReply.checked=true;replySection.classList.remove('hidden')}
+if(s('mode'))setMode(s('mode'));
+if(s('emailText'))inputEmail.value=s('emailText');
+if(s('bulletsText'))inputBullets.value=s('bulletsText');
+if(s('contextText'))inputContext.value=s('contextText');
+if(s('output'))outputPrompt.value=s('output');
+if(s('history')){try{history=JSON.parse(s('history'))||[]}catch(e){history=[]}}
+renderHistory();updatePreview();
+}catch(e){}
+}
+
+/* ========== INPUT LISTENERS ========== */
+[inputEmail,inputBullets,inputContext].forEach(el=>el.addEventListener('input',()=>{debouncedPreview();debouncedSave()}));
+[selStyle,selAnon].forEach(el=>el.addEventListener('change',()=>{debouncedPreview();debouncedSave()}));
+
+/* ========== INIT ========== */
+restoreState();
+})();
+</script>
+</body>
+</html>
